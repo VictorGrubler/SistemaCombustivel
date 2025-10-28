@@ -91,7 +91,7 @@ def role_required(papel):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return redirect(url_for("login"))
 
 from collections import defaultdict
 
