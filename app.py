@@ -13,9 +13,9 @@ app = Flask(__name__)
 app.secret_key = "victor123"
 
 # ---------------------------
-# CONFIGURAÇÃO DO POSTGRESQL
+# CONFIGURAÇÃO DO POSTGRESQL REMOTO (NEON)
 # ---------------------------
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/sistema_combustivel'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://neondb_owner:npg_qA72jeXotgFY@ep-broad-sound-a4ymzr4n-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
