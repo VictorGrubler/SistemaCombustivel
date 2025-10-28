@@ -1,0 +1,22 @@
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.sqlite3
+
+# Build / saída
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db

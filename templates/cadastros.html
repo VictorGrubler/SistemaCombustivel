@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="cadastros-container">
+  <h2>Gerenciamento de Cadastros</h2>
+
+  <div class="dados-flex">
+    <!-- MOTORISTAS -->
+    <div class="tabela-container">
+      <h3 class="titulo-tabela motoristas">Motoristas Ativos</h3>
+      <table class="tabela-cadastros">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in motoristas %}
+          <tr id="motorista-{{ m.id }}">
+            <td>{{ m.id }}</td>
+            <td>{{ m.nome }}</td>
+            <td>{{ m.cpf }}</td>
+            <td>
+              <button
+                type="button"
+                class="btn-excluir"
+                data-tipo="motorista"
+                data-id="{{ m.id }}">
+                Excluir
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-muted">Nenhum motorista ativo encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- VEÍCULOS -->
+    <div class="tabela-container">
+      <h3 class="titulo-tabela veiculos">Veículos Ativos</h3>
+      <table class="tabela-cadastros">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Placa</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in veiculos %}
+          <tr id="veiculo-{{ v.id }}">
+            <td>{{ v.id }}</td>
+            <td>{{ v.nome }}</td>
+            <td>{{ v.placa }}</td>
+            <td>
+              <button
+                type="button"
+                class="btn-excluir"
+                data-tipo="veiculo"
+                data-id="{{ v.id }}">
+                Excluir
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-muted">Nenhum veículo ativo encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const botoes = document.querySelectorAll(".btn-excluir");
+
+  botoes.forEach(btn => {
+    btn.addEventListener("click", async function() {
+      const tipo = this.dataset.tipo;
+      const id = this.dataset.id;
+
+      if (!confirm(`Tem certeza que deseja excluir este ${tipo} (ID: ${id})?`)) return;
+
+      try {
+        const resp = await fetch(`/excluir_registro/${tipo}/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        const dados = await resp.json();
+
+        if (resp.ok) {
+          const row = document.getElementById(`${tipo}-${id}`);
+          if (row) row.remove();
+          alert(dados.mensagem || "Registro excluído com sucesso.");
+        } else {
+          alert(dados.erro || "Erro ao excluir o registro.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Erro de rede ao tentar excluir. Veja o console para detalhes.");
+      }
+    });
+  });
+});
+</script>
+
+<style>
+.cadastros-container {
+  padding: 20px;
+  margin-left: 50px;
+}
+.cadastros-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #222;
+}
+
+.dados-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 25px;
+}
+
+.tabela-container {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 15px;
+}
+
+.titulo-tabela {
+  text-align: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  color: white;
+  border-radius: 6px;
+}
+.titulo-tabela.motoristas {
+  background-color: #003366;
+}
+.titulo-tabela.veiculos {
+  background-color: #003366;
+}
+
+.tabela-cadastros {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 14px;
+}
+.tabela-cadastros th,
+.tabela-cadastros td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+.tabela-cadastros th {
+  background-color: #f2f2f2;
+}
+
+.btn-excluir {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.btn-excluir:hover {
+  background: #b02a37;
+}
+</style>
+{% endblock %}

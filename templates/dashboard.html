@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-container">
+  <h2 class="titulo-dashboard">Dashboard de Abastecimentos</h2>
+
+  <!-- SELEÇÃO DE VEÍCULO -->
+  <div class="filtro-form">
+    <label for="veiculo">Selecione o veículo:</label>
+    <select id="veiculo" class="select-veiculo">
+      <option value="">-- Escolha um veículo --</option>
+      {% for v in veiculos %}
+        <option value="{{ v.id }}">{{ v.nome }} ({{ v.placa }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div id="dados-container" style="display:none;">
+    <div class="dados-flex">
+      <!-- TABELA -->
+      <div class="tabela-container">
+        <h3 class="titulo-tabela abastecimentos">Registros de Abastecimento</h3>
+        <table id="tabela-abastecimentos" class="tabela-cadastros">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Litros</th>
+              <th>Valor Total (R$)</th>
+              <th>Quilometragem</th>
+              <th>Média (Km/L)</th>
+              <th>Motorista</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- GRÁFICO -->
+      <div class="grafico-container">
+        <h3 class="titulo-tabela graficos">Médias de Consumo</h3>
+        <div class="periodo-filtro">
+          <label for="periodo">Período:</label>
+          <select id="periodo" class="select-periodo" onchange="atualizarGrafico(this.value)">
+            <option value="semana">Última Semana</option>
+            <option value="mes" selected>Último Mês</option>
+            <option value="ano">Último Ano</option>
+          </select>
+        </div>
+        <div class="grafico-box">
+          <canvas id="mediaChart" width="400" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p id="mensagem" class="mensagem-info">Selecione um veículo para visualizar os dados.</p>
+</div>
+
+<!-- SCRIPT JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let mediaChart = null;
+let dadosPeriodos = {};
+
+document.getElementById("veiculo").addEventListener("change", async function() {
+  const veiculoId = this.value;
+  const dadosContainer = document.getElementById("dados-container");
+  const mensagem = document.getElementById("mensagem");
+
+  if (!veiculoId) {
+    dadosContainer.style.display = "none";
+    mensagem.style.display = "block";
+    return;
+  }
+
+  const resposta = await fetch(`/dashboard_dados/${veiculoId}`);
+  dadosPeriodos = await resposta.json();
+
+  if (!dadosPeriodos.tabela.length) {
+    mensagem.textContent = "Nenhum abastecimento encontrado para este veículo.";
+    dadosContainer.style.display = "none";
+    mensagem.style.display = "block";
+    return;
+  }
+
+  preencherTabela(dadosPeriodos.tabela);
+  atualizarGrafico("mes");
+
+  dadosContainer.style.display = "block";
+  mensagem.style.display = "none";
+});
+
+function preencherTabela(abastecimentos) {
+  const tabelaBody = document.querySelector("#tabela-abastecimentos tbody");
+  tabelaBody.innerHTML = "";
+  abastecimentos.forEach(a => {
+    const row = `<tr>
+      <td>${a.data_abastecimento}</td>
+      <td>${a.litros}</td>
+      <td>${a.valor_total}</td>
+      <td>${a.quilometragem}</td>
+      <td>${a.media}</td>
+      <td>${a.motorista}</td>
+    </tr>`;
+    tabelaBody.insertAdjacentHTML("beforeend", row);
+  });
+}
+
+function atualizarGrafico(periodo) {
+  if (!dadosPeriodos[periodo]) return;
+
+  let labels = [];
+  let valores = [];
+  let titulo = "";
+
+  if (periodo === "ano") {
+    labels = dadosPeriodos.ano.map(a => a.mes);
+    valores = dadosPeriodos.ano.map(a => a.media);
+    titulo = "Média Mensal (Km/L)";
+  } else {
+    const abastecimentos = dadosPeriodos[periodo];
+    labels = abastecimentos.map(a => a.data_abastecimento);
+    valores = abastecimentos.map(a => a.media);
+    titulo = "Média por Abastecimento (Km/L)";
+  }
+
+  if (mediaChart) mediaChart.destroy();
+  const ctx = document.getElementById("mediaChart").getContext("2d");
+
+  mediaChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: titulo,
+        data: valores,
+        backgroundColor: "#003366"
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: "Km/L" } },
+        x: { title: { display: true, text: periodo === "ano" ? "Mês" : "Data do Abastecimento" } }
+      },
+      plugins: {
+        legend: { display: true }
+      }
+    }
+  });
+}
+</script>
+
+<!-- ESTILO -->
+<style>
+.dashboard-container {
+  padding: 25px;
+  margin-left: 50px;
+}
+.titulo-dashboard {
+  text-align: center;
+  color: #222;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+.filtro-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+.select-veiculo {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.dados-flex {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.tabela-container,
+.grafico-container {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 15px;
+  min-width: 450px;
+}
+
+.titulo-tabela {
+  text-align: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  color: white;
+  border-radius: 6px;
+}
+.titulo-tabela.abastecimentos {
+  background-color: #003366;
+}
+.titulo-tabela.graficos {
+  background-color: #003366;
+}
+
+.tabela-cadastros {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+}
+.tabela-cadastros th, .tabela-cadastros td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+.tabela-cadastros th {
+  background-color: #f2f2f2;
+}
+
+.periodo-filtro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 8px;
+}
+.select-periodo {
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+.grafico-box {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.mensagem-info {
+  text-align: center;
+  margin-top: 20px;
+  color: #555;
+}
+</style>
+{% endblock %}

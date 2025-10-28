@@ -1,0 +1,30 @@
+<div class="sidebar">
+  <div class="logo">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+  </div>
+  <div class="user-info">
+    <p class="role">{{ current_user.papel|capitalize }}</p>
+    <p class="name">{{ current_user.nome }}</p>
+  </div>
+
+  <ul class="menu">
+    <li class="section-title">Opções</li>
+    <div class="menu-box">
+      {% if current_user.papel == 'admin' %}
+        <li><a href="/motoristas">Motoristas</a></li>
+        <li><a href="/veiculos">Veículos</a></li>
+      {% endif %}
+      <li><a href="/abastecida">Abastecida</a></li>
+    </div>
+
+    {% if current_user.papel == 'admin' %}
+      <li class="section-title">Dashboards</li>
+      <div class="menu-box">
+        <li><a href="{{ url_for('media') }}">Média</a></li>
+        <li><a href="/cadastros">Cadastros</a></li>
+      </div>
+    {% endif %}
+
+    <li class="logout"><a href="/logout">Sair</a></li>
+  </ul>
+</div>
