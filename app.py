@@ -90,6 +90,7 @@ def role_required(papel):
 # ---------------------------
 
 @app.route("/")
+@login_required
 def index():
     return redirect(url_for("login"))
 
